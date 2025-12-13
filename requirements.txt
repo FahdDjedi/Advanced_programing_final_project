@@ -1,0 +1,99 @@
+
+ELEMENTS TO INSTALL :
+    - pip install pyopenssl
+    - OpenSSL (download from https://www.openssl.org/ or use Windows Subsystem for Linux)
+
+
+for open source vpn usage : 
+    - pip install requests
+    - pip install tabulate
+
+
+HOW TO RUN THE PROGRAM : 
+    STEP 1: INSTALL DEPENDENCIES
+        - Open Command Prompt or PowerShell as Administrator
+        - Navigate to project directory: cd VPN_Server\python_scripts
+        - Install Python dependencies: pip install pyopenssl
+
+    STEP 2: SETUP ENVIRONMENT
+        - Run environment setup: python manage.py setup
+        - This will create necessary directories and check for certificates
+
+    STEP 3: GENERATE SSL CERTIFICATES
+        - Generate SSL certificates: python key.py generate
+        - Or use the management tool: python manage.py certs
+        - This creates server.crt and server.key files for secure connections
+
+    STEP 4: START THE VPN SERVER
+        - Start server on localhost: python manage.py start
+        - Or start on all interfaces: python manage.py start --host 0.0.0.0 --port 8443
+        - Or start in background: python manage.py start --background
+
+    STEP 5: VERIFY SERVER IS RUNNING
+        - Check server status: python manage.py status
+        - Server should show "VPN server listening on [host]:[port]"
+
+    STEP 6: CONNECT CLIENT (Optional)
+        - Run VPN client: python vpn_client.py
+        - Client will connect to the server using SSL
+
+    MANAGEMENT COMMANDS:
+        - Stop server: python manage.py stop
+        - Restart server: python manage.py restart
+        - Check status: python manage.py status
+        - View logs: python manage.py logs
+        - Get help: python manage.py help
+
+    CERTIFICATE MANAGEMENT:
+        - Generate certificates: python key.py generate
+        - Check certificates: python key.py check
+        - View certificate info: python key.py info
+        - Clean certificates: python key.py cleanup
+
+    TROUBLESHOOTING:
+        - If OpenSSL not found: Install OpenSSL or use WSL
+        - If port in use: Change port with --port parameter
+        - If certificates invalid: Run python key.py generate --force
+        - If server won't start: Check if port 8443 is available
+
+
+
+RUN SERVER ALONE (EASIER WAY) : 
+    run :
+        - python vpn_server.py
+        - python vpn_client.py
+    
+    output on the server :
+        VPN server listening on 127.0.0.1:8443
+        Connection from ('127.0.0.1', 12345)
+        Received: b'Hello, VPN Server!'
+
+    output on the client :
+        Received from server: b'Hello, VPN Server!'
+
+
+
+COMMAND LINE SIMPLIFIED :
+    python manage.py setup
+    python key.py generate
+    python manage.py start    
+    manage.py status  
+    python vpn_client.py
+
+
+
+MORE COMMANDS :
+    Stop server: python manage.py stop
+    Restart server: python manage.py restart
+    Check status: python manage.py status
+    View logs: python manage.py logs
+    Get help: python manage.py help
+    python manage.py start --host 0.0.0.0 --port 8443
+    python manage.py start --background
+    manage.py status
+    manage.py logs
+    manage.py stop
+    Generate certificates: python key.py generate or python key.py generate --force
+    Check certificates: python key.py check
+    View certificate info: python key.py info
+    Clean certificates: python key.py cleanup
