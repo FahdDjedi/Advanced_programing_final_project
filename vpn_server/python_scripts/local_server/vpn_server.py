@@ -55,7 +55,7 @@ def start_vpn_server(host, port):
                     print("Client requested disconnection.")
                     conn.close()
                     print(f"Connection from {fromaddr} closed")
-                conn.shutdown(socket.SHUT_RDWR)
+                    conn.shutdown(socket.SHUT_RDWR)
             except OSError as e:
                 print(f"Error during shutdown: {e}")
             

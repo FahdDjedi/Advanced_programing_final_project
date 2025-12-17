@@ -1,6 +1,4 @@
-
 import random
-
 
 class VPNData:
     def __init__(self):
