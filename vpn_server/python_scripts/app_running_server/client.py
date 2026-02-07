@@ -71,7 +71,20 @@ def local_usage(conn):
     return
 
 def open_usage(conn):
-    servers = conn.recv(1024).decode()
+    # Receive all server data (may be larger than 1024 bytes)
+    data = b""
+    while True:
+        chunk = conn.recv(1024)
+        if not chunk:
+            break
+        data += chunk
+        try:
+            servers = json.loads(data.decode())
+            break
+        except json.JSONDecodeError:
+            # Incomplete JSON, keep receiving
+            continue
+    
     if not servers:
         print("[!] Could not retrieve servers. Exiting.")
         sys.exit(1)
@@ -89,9 +102,9 @@ def open_usage(conn):
 
     country_choice = input("Enter your choice (1-5 or Q to quit): ")
 
-    while country_choice not in len(countries):
+    while not (country_choice.isdigit() and 1 <= int(country_choice) <= len(countries)) and country_choice.lower() != 'q':
             print("Invalid choice. Please enter a number between 1 and 5 : ")
-            country_choice = conn.recv(1024).decode().strip()
+            country_choice = input("Enter your choice (1-5 or Q to quit): ")
 
     if country_choice.lower() == 'q':
             print(conn.recv(1024).decode())
@@ -101,20 +114,26 @@ def open_usage(conn):
     if not country_choice.isdigit() or int(country_choice) < 1 or int(country_choice) > len(countries):
         print(conn.recv(1024).decode())
         
+    conn.send(country_choice.encode())
+    
+
     selected_country = countries[int(country_choice) - 1]
     country_servers = [s for s in servers if s['country'] == selected_country]
+    
+    # Show top 5 fastest servers for this country
+    print(conn.recv(1024).decode())
+
     table_data = []
     for i, s in enumerate(country_servers[:5], 1):
         table_data.append([i, s['ip'], f"{s['speed_mbps']} Mbps", f"{s['ping']} ms"])
 
     print(conn.recv(1024).decode())
-    print(conn.recv(1024).decode())
 
-    server_choice = input(f"Select server (1-{len(countries)}) or 'b' to back: ")
+    server_choice = input(f"Select server (1-{len(table_data)}) or 'b' to back: ")
     conn.send(server_choice.encode())
 
             
-    if not server_choice.isdigit() or int(server_choice) < 1 or int(server_choice) > len(table_data):
+    if not (server_choice.isdigit() and 1 <= int(server_choice) <= len(table_data)) and server_choice.lower() != 'b':
         print(conn.recv(1024).decode())
             
     # 4. Connect

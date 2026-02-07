@@ -113,7 +113,7 @@ def open_exec(conn, run):
 
     # 1. Fetch Servers
     servers = vpn_api.fetch_servers()
-    conn.sendall(servers.encode())
+    conn.sendall(json.dumps(servers).encode())
     if not servers:
         print("[!] Could not retrieve servers. Exiting.")
         sys.exit(1)
@@ -125,16 +125,13 @@ def open_exec(conn, run):
         # 2. Country Selection
         countries = vpn_api.get_countries(servers)
         
-        print("\nAvailable Countries:")
         conn.sendall("\nAvailable Countries: \n".encode())
 
         # Display countries in columns or a simple list
         for i, country in enumerate(countries, 1):
-            print(f"{i}. {country}")
-            conn.sendall(f"{i}. {country}\n".encode())
+            conn.sendall(f"{i}. {country}".encode())
 
         conn.sendall("Q. Quit\n".encode())
-        print("Q. Quit")
 
         choice = conn.recv(1024).decode().strip()
         
@@ -156,14 +153,12 @@ def open_exec(conn, run):
         country_servers = [s for s in servers if s['country'] == selected_country]
         
         # Show top 5 fastest servers for this country
-        print(f"\nTop Servers in {selected_country}:")
         conn.sendall(f"\nTop Servers in {selected_country}:\n".encode())
 
         table_data = []
         for i, s in enumerate(country_servers[:5], 1):
             table_data.append([i, s['ip'], f"{s['speed_mbps']} Mbps", f"{s['ping']} ms"])
             
-        print(tabulate(table_data, headers=["ID", "IP Address", "Speed", "Ping"], tablefmt="grid"))
         conn.sendall(tabulate(table_data, headers=["ID", "IP Address", "Speed", "Ping"], tablefmt="grid").encode())
         
         server_choice = conn.recv(1024).decode().strip()
