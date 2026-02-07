@@ -8,6 +8,9 @@ import os
 import random
 
 
+# Ensure the parent `python_scripts` folder is on sys.path so sibling packages import correctly
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+
 from local_server.data import VPNData
 import open_source.vpn_api as vpn_api
 import open_source.vpn_core as vpn_core
@@ -41,7 +44,7 @@ def handle_auth():
     username = input("Enter username: ")
     password = input("Enter password: ")
     curser.execute(f"USE {DB_NAME};")
-    curser.execute(f"SELECT * FROM users WHERE username='{username}' AND password='{password}';")
+    curser.execute(f"SELECT * FROM client WHERE email='{username}' AND pswrd='{password}';")
     result = curser.fetchone()
     if result:
         print("Authentication successful.")
