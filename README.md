@@ -1,110 +1,179 @@
-# Advanced_Programing_Project
+# CLI VPN Python App
 
-Content of the project :
-  this project is aiming to create a vpn server that the user can connect to via commande lines using cmd and it will be developed using python exclusivly with the objective of learning said coding language during the Adavnced Programing mudulus 
-  
-  This creates a learning-focused VPN server project that demonstrates networking, 
-  security and Python development concepts
+A learning-focused VPN project implemented in Python with a command-line interface.
 
-The spets necessary :
-  1. - Setting Up the Environment
-     - installing all requiered programs
-     - important files to creat and write (Cly.py, Manage.py, config.py, keys.py, System.py ...)
-  2. - figuring out the VPN Server Program
-  3. - writing and optimizing the VPN Server Program
-     - keys generating program
-     - CSR (Certificate Signing Resquest) creation
-     - generate a self-signed certificate
-     - add unit tests, logging, error handling. Add docs and examples
-     - add simple revoke/remove-peer flow and rotation notes
-  4. - figuring out the VPN Client Program
-  5. - writing and optimizing the VPN Client Program
-  6. - test running and making sure everything is in place 
-  7. - connecting to a chosen server to mark the unooficial end of the project
-  8. - designing a small simple and intuitive UI to make the use of the app easier
-  9. - OFFICIALLY ending and closing the project
+It includes:
+- A TLS-secured local client/server flow
+- Certificate/key generation scripts
+- A management CLI for setup and server lifecycle
+- An optional "open server" mode that fetches VPN Gate endpoints and runs OpenVPN
 
+## Core Functionalities
 
+### 1. Secure local VPN-like connection (TLS socket)
+- `local_server/vpn_server.py` starts an SSL/TLS socket server.
+- `local_server/vpn_client.py` connects securely and selects a country.
+- The server picks a matching endpoint from local data and returns connection details.
+- Client can send `DISCONNECT` to close the session.
 
-VPN SERVER PROJECT FILES OVERVIEW:
+### 2. Certificate lifecycle management
+- `local_server/key.py` supports:
+  - `generate` (private key + CSR + self-signed certificate)
+  - `check` (validity/expiry check)
+  - `info` (full cert details)
+  - `cleanup` (remove generated cert artifacts)
+- Uses OpenSSL via shell commands.
 
-PYTHON SCRIPTS (python_scripts/ folder):
+### 3. Server management CLI
+- `local_server/manage.py` supports:
+  - `setup` (creates directories and ensures certs)
+  - `start`, `stop`, `restart`
+  - `status`
+  - `certs`
+  - `logs` (placeholder)
+  - `help`
 
-1. vpn_server.py
-   - Purpose: Main VPN server implementation
-   - Function: Creates SSL-enabled server that listens for client connections
-   - Key Features: SSL/TLS encryption, connection handling, data transmission
+### 4. Open server mode (VPN Gate + OpenVPN)
+- `open_source/vpn_api.py` fetches and parses VPN Gate server data.
+- `open_source/app.py` provides an interactive country/server picker.
+- `open_source/vpn_core.py` decodes OpenVPN config and launches `openvpn`.
 
-2. vpn_client.py
-   - Purpose: VPN client application
-   - Function: Connects to the VPN server securely
-   - Key Features: SSL connection, data exchange with server
+### 5. Combined app mode (service selector + DB auth)
+- `app_running_server/server.py` + `app_running_server/client.py`
+- Adds:
+  - User authentication through MySQL
+  - Service selection:
+    - `LOCAL HOSTING`
+    - `OPEN SERVER`
 
-3. manage.py
-   - Purpose: Server management tool
-   - Function: Command-line interface for starting/stopping/managing the server
-   - Key Features: Server control, status checking, environment setup
+## Project Structure
 
-4. key.py
-   - Purpose: SSL certificate management
-   - Function: Generates, validates, and manages SSL certificates
-   - Key Features: Certificate generation, validation, cleanup
+```text
+vpn_server/
+  keys_and_certification/
+    server.csr
+    server.csr.cnf
+    server.crt.cnf
+  python_scripts/
+    app_running_server/
+      client.py
+      server.py
+    local_server/
+      data.py
+      key.py
+      manage.py
+      server.crt
+      server.key
+      vpn_client.py
+      vpn_server.py
+    open_source/
+      app.py
+      vpn_api.py
+      vpn_core.py
+```
 
-5. config.py
-   - Purpose: Configuration management
-   - Function: Centralized settings for server, SSL, logging, security
-   - Key Features: Environment-specific configs, validation, file management
+## Requirements
 
-SSL CERTIFICATE FILES:
+- Python 3.9+
+- OpenSSL installed and available in `PATH`
+- (Open server mode) OpenVPN installed and available in `PATH`
+- (Combined app mode) MySQL server + Python DB connector
 
-6. server.csr.cnf
-   - Purpose: OpenSSL configuration for Certificate Signing Request
-   - Function: Defines certificate parameters (CN=127.0.0.1, SAN IP=127.0.0.1)
-   - Key Features: Localhost certificate configuration, Subject Alternative Names
+Install Python packages:
 
-7. server.csr
-   - Purpose: Certificate Signing Request file
-   - Function: Request for SSL certificate from Certificate Authority
-   - Key Features: Contains public key and certificate details
+```bash
+pip install -r requirements.txt
+pip install mysql-connector-python python-dotenv
+```
 
-8. server.crt.cnf
-   - Purpose: Certificate configuration file
-   - Function: Settings for generating self-signed certificates
-   - Key Features: Certificate extensions, key usage, subject alternative names
+## Quick Start (Local Server Mode)
 
-PROJECT STRUCTURE:
-VPN_Server/
-├── python_scripts/          # Main application code
-│   ├── vpn_server.py       # Core server implementation
-│   ├── vpn_client.py       # Client application
-│   ├── manage.py           # Management interface
-│   ├── key.py              # Certificate management
-│   └── config.py           # Configuration settings
-├── server.csr.cnf          # CSR configuration
-├── server.csr              # Certificate signing request
-└── server.crt.cnf          # Certificate configuration
+![alt text](image-1.png)
 
-HOW FILES WORK TOGETHER:
-1. config.py → Provides settings for all other components
-2. key.py → Generates SSL certificates using server.csr.cnf
-3. manage.py → Uses config to start/stop the server
-4. vpn_server.py → Uses certificates from key.py for secure connections
-5. vpn_client.py → Connects to server using same certificate chain
+From project root:
 
-PROJECT GOAL:
-Build a complete Python-based VPN solution with:
-- Secure SSL/TLS connections
-- Command-line management
-- Certificate management
-- Configurable settings
-- Professional structure
+```bash
+cd vpn_server/python_scripts/local_server
+python manage.py setup
+python key.py generate
+python manage.py start
+```
 
-dEFINITIONS :
-- A CSR (Certificate Signing Request) is a file you generate when you want a certificate from a Certificate Authority. it's created: generated using your private key and signed with that same private key to prove you control it. the "server.csr.cnt" sets fields like CN=127.0.0.1 and SAN IP=127.0.0.1, so the issued server certificate will be valid for localhost
+In a second terminal:
 
+```bash
+cd vpn_server/python_scripts/local_server
+python vpn_client.py
+```
 
-The members :
-  Djedi Fahd
-  Angar Yacine
-  Djebbar Seddik Adel
-  Banazza Mehdi
+Useful management commands:
+
+```bash
+python manage.py status
+python manage.py restart
+python manage.py stop
+python key.py check
+python key.py info
+```
+
+## Open Server Mode (Standalone)
+
+![alt text](image.png)
+
+From:
+
+```bash
+cd vpn_server/python_scripts/open_source
+python app.py
+```
+
+What this does:
+- Downloads VPN Gate list
+- Lets you choose a country
+- Shows top servers (speed/ping)
+- Starts OpenVPN with decoded config
+
+## Combined App Mode (DB + Service Choice)
+
+From:
+
+```bash
+cd vpn_server/python_scripts
+python app_running_server/server.py
+```
+
+In another terminal:
+
+```bash
+cd vpn_server/python_scripts
+python app_running_server/client.py
+```
+
+Create a `.env` file (or export env vars) for DB connectivity:
+
+```env
+DB_HOST=127.0.0.1
+DB_PORT=3306
+DB_NAME=your_database_name
+DB_USER=your_username
+DB_PASS=your_password
+```
+
+Expected DB tables used by current code:
+- `services`
+- `countries`
+- `users`
+
+## Notes and Limitations
+
+- This is an educational project and not production-ready VPN infrastructure.
+- `manage.py logs` is currently a placeholder.
+- Some flows assume files are run from specific working directories.
+- The local mode returns server/proxy details; it does not create a full OS-level tunnel by itself.
+
+## Team
+
+- Djedi Fahd
+- Angar Yacine
+- Djebbar Seddik Adel
+- Banazza Mehdi
