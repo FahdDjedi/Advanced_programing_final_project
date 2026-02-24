@@ -4,7 +4,7 @@ import json
 import os
 import random
 
-from data import VPNData
+from .data import VPNData
 
 vpn_data = VPNData()
 

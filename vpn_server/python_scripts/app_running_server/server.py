@@ -7,6 +7,9 @@ import json
 import os
 import random
 
+# Ensure the parent `python_scripts` folder is on sys.path so local imports work
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+
 from local_server.data import VPNData
 import open_source.vpn_api as vpn_api
 import open_source.vpn_core as vpn_core
@@ -21,11 +24,22 @@ local_host, local_port = '127.0.0.1', 8443
 
 # set up database connection
 load_dotenv()
-DB_HOST = os.getenv("DB_HOST")
-DB_PORT = int(os.getenv("DB_PORT"))
+DB_HOST = os.getenv("DB_HOST", "localhost")
+# Safely parse DB_PORT with a sensible default and fallback on error
+db_port_str = os.getenv("DB_PORT", "3306")
+try:
+    DB_PORT = int(db_port_str)
+except (TypeError, ValueError):
+    print(f"[!] Invalid DB_PORT value: {db_port_str}. Falling back to 3306.")
+    DB_PORT = 3306
+
 DB_NAME = os.getenv("DB_NAME")
 DB_USER = os.getenv("DB_USER")
 DB_PASS = os.getenv("DB_PASS")
+
+# Require minimal DB config to proceed
+if not DB_NAME or not DB_USER:
+    raise RuntimeError("Missing required DB environment variables: DB_NAME and DB_USER must be set.")
 
 database = mysql.connector.connect(
     host=DB_HOST,
@@ -38,7 +52,7 @@ curser = database.cursor()
 # create service choice map from data base
 service_choice_map = {}
 curser.execute(f"USE {DB_NAME};")
-curser.execute("SELECT * FROM services;")
+curser.execute("SELECT * FROM service;")
 result = curser.fetchall()
 for row in result:
     service_choice_map[str(row[0])] = row[1]
@@ -46,7 +60,7 @@ for row in result:
 # create country choice map from data base
 country_map = {}
 curser.execute(f"USE {DB_NAME};")
-curser.execute("SELECT * FROM countries;")
+curser.execute("SELECT * FROM country;")
 result = curser.fetchall()
 for row in result:
     country_map[str(row[0])] = row[1]
@@ -56,7 +70,7 @@ def clear_screen():
 
 def local_exec(conn, run):
     try:
-        conn.sendall("Choose a country to connect to: \n"
+        conn.sendall("\n Choose a country to connect to: \n"
                         "1. France \n"
                         "2. Germany \n"
                         "3. United Kingdom \n"
@@ -99,7 +113,7 @@ def open_exec(conn, run):
 
     # 1. Fetch Servers
     servers = vpn_api.fetch_servers()
-    conn.sendall(servers.encode())
+    conn.sendall(json.dumps(servers).encode())
     if not servers:
         print("[!] Could not retrieve servers. Exiting.")
         sys.exit(1)
@@ -111,16 +125,13 @@ def open_exec(conn, run):
         # 2. Country Selection
         countries = vpn_api.get_countries(servers)
         
-        print("\nAvailable Countries:")
         conn.sendall("\nAvailable Countries: \n".encode())
 
         # Display countries in columns or a simple list
         for i, country in enumerate(countries, 1):
-            print(f"{i}. {country}")
-            conn.sendall(f"{i}. {country}\n".encode())
+            conn.sendall(f"{i}. {country}".encode())
 
         conn.sendall("Q. Quit\n".encode())
-        print("Q. Quit")
 
         choice = conn.recv(1024).decode().strip()
         
@@ -142,14 +153,12 @@ def open_exec(conn, run):
         country_servers = [s for s in servers if s['country'] == selected_country]
         
         # Show top 5 fastest servers for this country
-        print(f"\nTop Servers in {selected_country}:")
         conn.sendall(f"\nTop Servers in {selected_country}:\n".encode())
 
         table_data = []
         for i, s in enumerate(country_servers[:5], 1):
             table_data.append([i, s['ip'], f"{s['speed_mbps']} Mbps", f"{s['ping']} ms"])
             
-        print(tabulate(table_data, headers=["ID", "IP Address", "Speed", "Ping"], tablefmt="grid"))
         conn.sendall(tabulate(table_data, headers=["ID", "IP Address", "Speed", "Ping"], tablefmt="grid").encode())
         
         server_choice = conn.recv(1024).decode().strip()
